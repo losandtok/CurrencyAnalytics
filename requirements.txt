@@ -6,4 +6,4 @@ requests
 pypi-json
 pandas
 pydantic
-gumicorn
+gunicorn
