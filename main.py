@@ -53,7 +53,7 @@ async def main(first_cur, username = Depends(get_current_username), second_cur=N
     l = [j for j in [first_cur, second_cur, third_cur, four_cur] if j != None]
 
     take_percent_change_sev_cur(l)
-    return FileResponse("C:/Users/Ольга/PycharmProjects/fastapi_clone/percent_changes.png")
+    return FileResponse("percent_changes.png")
 
 if __name__ == "__main__":
     uvicorn.run("main:app",host='127.0.0.1', port=8000, reload=True, debug=True, workers=1)
