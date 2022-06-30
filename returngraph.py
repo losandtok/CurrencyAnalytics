@@ -7,7 +7,7 @@ scope = PlotlyScope(
     plotlyjs="https://cdn.plot.ly/plotly-latest.min.js",
     # plotlyjs="/path/to/local/plotly.js",
 )
-with open('C:/Users/Ольга/PycharmProjects/fastapi_clone/timeseries_rates.txt', 'r') as file:
+with open('timeseries_rates.txt', 'r') as file:
     rates = json.load(file)['rates']
 def sel_one_cur(cur_name):
 
@@ -36,7 +36,7 @@ def take_percent_change_sev_cur(currencies):
     df = pd.DataFrame(data, columns=['Date', 'Currency', 'Rate', 'Percent change'])
     fig = px.line(df, x='Date', y='Percent change', color='Currency')
 
-    with open("C:/Users/Ольга/PycharmProjects/fastapi_clone/percent_changes.png", "wb") as p:
+    with open("percent_changes.png", "wb") as p:
         p.write(scope.transform(fig, format="png"))
 
 take_percent_change_sev_cur(cur)
