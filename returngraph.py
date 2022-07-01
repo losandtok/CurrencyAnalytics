@@ -14,7 +14,7 @@ scope = PlotlyScope(
     # plotlyjs="/path/to/local/plotly.js",
 )
 
-with open('C:/Users/Ольга/PycharmProjects/fastapi_clone/timeseries_rates.txt', 'r') as file:
+with open('timeseries_rates.txt', 'r') as file:
     rates = json.load(file)['rates']
 
 #function take a list currencies and return graph with comparsion percent change them
@@ -34,6 +34,6 @@ def take_percent_change_sev_cur(currencies):
     df = pd.DataFrame(temporary_data, columns=['Date', 'Currency', 'Rate', 'Percent change'])
     fig = px.line(df, x='Date', y='Percent change', color='Currency')
 
-    with open("C:/Users/Ольга/PycharmProjects/fastapi_clone/percent_changes.png", "wb") as p:
+    with open("percent_changes.png", "wb") as p:
         p.write(scope.transform(fig, format="png"))
 
