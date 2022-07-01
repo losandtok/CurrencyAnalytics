@@ -1,30 +1,39 @@
-import json
+import plotly.express as px
 import pandas as pd
-def sel_one_cur(cur_name):
-    import pandas as pd
-    import plotly.express as px
-    import json
-    from kaleido.scopes.plotly import PlotlyScope
-    scope = PlotlyScope(
-        plotlyjs="https://cdn.plot.ly/plotly-latest.min.js",
-        # plotlyjs="/path/to/local/plotly.js",
-    )
-    with open('timeseries_rates.txt', 'r') as file:
-        rates = json.load(file)['rates']
-    data = []
+from kaleido.scopes.plotly import PlotlyScope
+#Used to create DataFrame from Json dictonary containing currency rates in format dictionary with date-keys and values others dicionaries with currency code-keys and values rate in that day
 
-    for i in rates:
-        data.append([i, rates[i][cur_name], cur_name])
-    df = pd.DataFrame(data, columns=['Date', 'Rate', 'Currency'])
 
-    fig = px.line(df, x='Date', y='Rate')
-    with open("figure.png", "wb") as f:
-        f.write(scope.transform(fig, format="png"))
-with open('timeseries_rates.txt', 'r') as file:
+
+import json
+#Used to change Json format to dictionary
+
+
+scope = PlotlyScope(
+    plotlyjs="https://cdn.plot.ly/plotly-latest.min.js",
+    # plotlyjs="/path/to/local/plotly.js",
+)
+
+with open('C:/Users/Ольга/PycharmProjects/fastapi_clone/timeseries_rates.txt', 'r') as file:
     rates = json.load(file)['rates']
-data = []
-for i in rates:
-    for j in rates[i]:
-        data.append([i, j, rates[i][j]])
-df = pd.DataFrame(data, columns=['Date', 'Currency', 'Rate'])
+
+#function take a list currencies and return graph with comparsion percent change them
+def take_percent_change_sev_cur(currencies):
+    temporary_data = []
+    start_date = '2022-03-15'
+
+    #Fill temporary data tuples with date, name currency, rate and percent change
+    for currency in currencies:
+        start_rate = rates[start_date][currency]
+        for date in rates:
+            per_change = (rates[date][currency] / start_rate - 1) * 100
+            temporary_data.append((date, currency, rates[date][currency], per_change))
+
+
+    #Create pandas database from tempora
+    df = pd.DataFrame(temporary_data, columns=['Date', 'Currency', 'Rate', 'Percent change'])
+    fig = px.line(df, x='Date', y='Percent change', color='Currency')
+
+    with open("C:/Users/Ольга/PycharmProjects/fastapi_clone/percent_changes.png", "wb") as p:
+        p.write(scope.transform(fig, format="png"))
 
