@@ -3,8 +3,8 @@ import secrets
 from enum import Enum
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from returngraph import sel_one_cur
-
+from returngraph import  take_percent_change_sev_cur
+import uvicorn
 
 
 
@@ -25,8 +25,8 @@ security = HTTPBasic()
 
 
 def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, "losandtok")
-    correct_password = secrets.compare_digest(credentials.password, "yan432678")
+    correct_username = secrets.compare_digest(credentials.username, "yan")
+    correct_password = secrets.compare_digest(credentials.password, "2508")
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -43,8 +43,14 @@ def read_current_user(username: str = Depends(get_current_username)):
     return {"username": username}
 
 
-@app.get("/currencies/{currency_name}")
-async def main(currency_name: CurrencyName, username = Depends(get_current_username)):
-    sel_one_cur(currency_name)
-    return FileResponse("figure.png")
 
+
+@app.get("/sev_currencies/{first_cur}")
+async def main(first_cur: CurrencyName, username=Depends(get_current_username), second_cur: CurrencyName =None, third_cur:CurrencyName =None, four_cur:CurrencyName=None):
+    l = [j for j in [first_cur, second_cur, third_cur, four_cur] if j != None]
+
+    take_percent_change_sev_cur(l)
+    return FileResponse("percent_changes.png")
+
+if __name__ == "__main__":
+    uvicorn.run("main:app",host='127.0.0.1', port=8000, reload=True, debug=True, workers=1)
