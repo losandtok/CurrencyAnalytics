@@ -97,7 +97,7 @@ def read_current_user(username: str = Depends(get_current_username)):
 
 
 @app.get("/timeseries/{start_date}/{end_date}")
-async def time(start_date_year: year, start_date_month: month, start_date_day: day, end_date_year: year, end_date_month: month, end_date_day: day):
+async def time(start_date_year: year, start_date_month: month, start_date_day: day, end_date_year: year, end_date_month: month, end_date_day: day, username=Depends(get_current_username)):
     set_timeseries(start_date_year + '-' + start_date_month + '-' +start_date_day, end_date_year + '-' + end_date_month + '-' + end_date_day)
     return 'Timeseries are setting'
 
