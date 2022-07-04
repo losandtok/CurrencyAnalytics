@@ -3,12 +3,8 @@ import secrets
 from enum import Enum
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from returngraph import  take_percent_change_sev_cur
+from returngraph import take_percent_change_sev_cur
 from timeseries_rates import set_timeseries, translate_date
-
-
-
-
 
 
 class CurrencyName(str, Enum):
@@ -20,7 +16,8 @@ class CurrencyName(str, Enum):
     BYN = "BYN"
     RUB = "RUB"
 
-class day(str, Enum):
+
+class Day(str, Enum):
     one = '01'
     two = '02'
     three = '03'
@@ -52,7 +49,8 @@ class day(str, Enum):
     twenty_nine = '29'
     thirty = '30'
 
-class month(str, Enum):
+
+class Month(str, Enum):
     January = '01'
     February = '02'
     March = '03'
@@ -65,12 +63,15 @@ class month(str, Enum):
     Ocrober = '10'
     November = '11'
     December = '12'
-class year(str, Enum):
+
+
+class Year(str, Enum):
     eighteen_year = '2018'
     nineteen_year = '2019'
     twenty_year = '2020'
     twenty_one_year = '2021'
     twenty_two_year = '2022'
+
 
 app = FastAPI()
 
@@ -89,24 +90,24 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     return credentials.username
 
 
-
-
 @app.get("/users/me")
 def read_current_user(username: str = Depends(get_current_username)):
     return {"username": username}
 
 
 @app.get("/timeseries/{start_date}/{end_date}")
-async def time(start_date_year: year, start_date_month: month, start_date_day: day, end_date_year: year, end_date_month: month, end_date_day: day):
-    start_date, end_date = translate_date(start_date_day, start_date_month, start_date_year, end_date_day, end_date_month, end_date_year)
+async def time(start_date_year: Year, start_date_month: Month, start_date_day: Day,
+               end_date_year: Year, end_date_month: Month, end_date_day: Day):
+    start_date, end_date = translate_date(start_date_day, start_date_month, start_date_year,
+                                          end_date_day, end_date_month, end_date_year)
     set_timeseries(start_date, end_date)
     return 'Timeseries are setting'
 
 
 @app.get("/sev_currencies/{first_cur}")
-async def main(first_cur: CurrencyName, username=Depends(get_current_username), second_cur: CurrencyName =None, third_cur:CurrencyName =None, four_cur:CurrencyName=None):
-    l = [j for j in [first_cur, second_cur, third_cur, four_cur] if j != None]
+async def main(first_cur: CurrencyName, username=Depends(get_current_username), second_cur: CurrencyName = None,
+               third_cur: CurrencyName = None, four_cur: CurrencyName = None):
+    used_currencies = [currency for currency in [first_cur, second_cur, third_cur, four_cur] if currency is not None]
 
-    take_percent_change_sev_cur(l)
+    take_percent_change_sev_cur(used_currencies)
     return FileResponse("percent_changes.png")
-
