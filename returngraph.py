@@ -1,12 +1,13 @@
 import plotly.express as px
 import pandas as pd
 from kaleido.scopes.plotly import PlotlyScope
-#Used to create DataFrame from Json dictonary containing currency rates in format dictionary with date-keys and values others dicionaries with currency code-keys and values rate in that day
 
-
+# Used to create DataFrame from Json dictionary containing currency rates in format dictionary with date-keys and
+# values others dictionaries with currency code-keys and values rate in that day
 
 import json
-#Used to change Json format to dictionary
+
+# Used to change Json format to dictionary
 
 
 scope = PlotlyScope(
@@ -15,32 +16,38 @@ scope = PlotlyScope(
 )
 
 
+# function take a list currencies and return graph with comparsion percent change them
 
-#function take a list currencies and return graph with comparsion percent change them
+
+# function take a list currencies and return graph with comparsion percent change them
+
 def take_percent_change_sev_cur(currencies):
     with open('timeseries_rates.txt', 'r') as file:
         rates = json.load(file)['rates']
     temporary_data = []
     start_date = list(rates.keys())[0]
 
-    #Fill temporary data tuples with date, name currency, rate and percent change
+    # Fill temporary data tuples with date, name currency, rate and percent change
     for currency in currencies:
         start_rate = rates[start_date][currency]
         for date in rates:
             per_change = (rates[date][currency] / start_rate - 1) * -100
             temporary_data.append((date, currency, rates[date][currency], per_change))
 
+    # Create pandas database from tempora
+    df = pd.DataFrame(temporary_data, columns=['Date', 'Currency', 'Rate', 'Percent change'])
+    fig = px.line(df, x='Date', y='Percent change', color='Currency')
 
-    #Create pandas database from tempora
+    # Fill temporary data tuples with date, name currency, rate and percent change
+    for currency in currencies:
+        start_rate = rates[start_date][currency]
+        for date in rates:
+            per_change = (rates[date][currency] / start_rate - 1) * -100
+            temporary_data.append((date, currency, rates[date][currency], per_change))
+
+    # Create pandas database from tempora
     df = pd.DataFrame(temporary_data, columns=['Date', 'Currency', 'Rate', 'Percent change'])
     fig = px.line(df, x='Date', y='Percent change', color='Currency')
 
     with open("percent_changes.png", "wb") as p:
         p.write(scope.transform(fig, format="png"))
-
-take_percent_change_sev_cur(['EUR', 'UAH', 'PLN'])
-
-
-
-
-
