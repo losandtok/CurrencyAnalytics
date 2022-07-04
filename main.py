@@ -44,7 +44,7 @@ def read_current_user(username: str = Depends(get_current_username)):
 
 
 @app.get("/currencies/{currency_name}")
-async def main(currency_name: CurrencyName):
+async def main(currency_name: CurrencyName, username = Depends(get_current_username)):
     sel_one_cur(currency_name)
     return FileResponse("figure.png")
 
