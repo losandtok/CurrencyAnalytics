@@ -16,10 +16,10 @@ scope = PlotlyScope(
 )
 
 
-# function take a list currencies and return graph with comparsion percent change them
 
 
-# function take a list currencies and return graph with comparsion percent change them
+
+# function take a list currencies and return graph with comparison percent change them
 
 def take_percent_change_sev_cur(currencies):
     with open('timeseries_rates.txt', 'r') as file:
