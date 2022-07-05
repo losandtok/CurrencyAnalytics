@@ -97,7 +97,8 @@ def read_current_user(username: str = Depends(get_current_username)):
 
 @app.get("/timeseries/{start_date}/{end_date}")
 async def time(start_date_year: Year, start_date_month: Month, start_date_day: Day,
-               end_date_year: Year, end_date_month: Month, end_date_day: Day):
+               end_date_year: Year, end_date_month: Month, end_date_day: Day,
+               username=Depends(get_current_username)):
     start_date, end_date = translate_date(start_date_day, start_date_month, start_date_year,
                                           end_date_day, end_date_month, end_date_year)
     set_timeseries(start_date, end_date)
@@ -105,8 +106,9 @@ async def time(start_date_year: Year, start_date_month: Month, start_date_day: D
 
 
 @app.get("/sev_currencies/{first_cur}")
-async def main(first_cur: CurrencyName, username=Depends(get_current_username), second_cur: CurrencyName = None,
-               third_cur: CurrencyName = None, four_cur: CurrencyName = None):
+async def main(first_cur: CurrencyName, second_cur: CurrencyName = None,
+               third_cur: CurrencyName = None, four_cur: CurrencyName = None,
+               username=Depends(get_current_username)):
     used_currencies = [currency for currency in [first_cur, second_cur, third_cur, four_cur] if currency is not None]
 
     take_percent_change_sev_cur(used_currencies)
