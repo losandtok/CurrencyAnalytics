@@ -1,11 +1,16 @@
-from fastapi.responses import FileResponse
 import secrets
+from fastapi.responses import FileResponse
 from enum import Enum
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from sqlalchemy.orm import Session
+
 from returngraph import take_percent_change_sev_cur
 from timeseries_rates import set_timeseries, translate_date
+from user_database import crud, schemas, models
+from user_database.database import SessionLocal, engine
 
+models.Base.metadata.create_all(bind=engine)
 
 class CurrencyName(str, Enum):
     USD = "USD"
@@ -77,10 +82,39 @@ app = FastAPI()
 
 security = HTTPBasic()
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, "yan")
-    correct_password = secrets.compare_digest(credentials.password, "2508")
+
+
+@app.post("/users/", response_model=schemas.User)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return crud.create_user(db=db, user=user)
+
+
+
+
+def get_current_username(credentials: HTTPBasicCredentials = Depends(security), db: Session = Depends(get_db)):
+
+    user_name = credentials.username
+    password = credentials.password
+    user = crud.get_user_by_email(db, user_name)
+    if user:
+        correct_user_name = user_name
+        if user.hashed_password.strip("notreallyhashed")  == password:
+            correct_password = password
+    else:
+        correct_user_name = "None"
+        correct_password = "None"
+    correct_username = secrets.compare_digest(credentials.username, correct_user_name)
+    correct_password = secrets.compare_digest(credentials.password, correct_password)
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -90,6 +124,7 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     return credentials.username
 
 
+
 @app.get("/users/me")
 def read_current_user(username: str = Depends(get_current_username)):
     return {"username": username}
@@ -97,7 +132,8 @@ def read_current_user(username: str = Depends(get_current_username)):
 
 @app.get("/timeseries/{start_date}/{end_date}")
 async def time(start_date_year: Year, start_date_month: Month, start_date_day: Day,
-               end_date_year: Year, end_date_month: Month, end_date_day: Day):
+               end_date_year: Year, end_date_month: Month, end_date_day: Day,
+               username=Depends(get_current_username)):
     start_date, end_date = translate_date(start_date_day, start_date_month, start_date_year,
                                           end_date_day, end_date_month, end_date_year)
     set_timeseries(start_date, end_date)
@@ -105,8 +141,9 @@ async def time(start_date_year: Year, start_date_month: Month, start_date_day: D
 
 
 @app.get("/sev_currencies/{first_cur}")
-async def main(first_cur: CurrencyName, username=Depends(get_current_username), second_cur: CurrencyName = None,
-               third_cur: CurrencyName = None, four_cur: CurrencyName = None):
+async def main(first_cur: CurrencyName, second_cur: CurrencyName = None,
+               third_cur: CurrencyName = None, four_cur: CurrencyName = None,
+               username=Depends(get_current_username)):
     used_currencies = [currency for currency in [first_cur, second_cur, third_cur, four_cur] if currency is not None]
 
     take_percent_change_sev_cur(used_currencies)
