@@ -19,7 +19,6 @@ scope = PlotlyScope(
 # function take a list currencies and return graph with comparsion percent change them
 
 
-# function take a list currencies and return graph with comparsion percent change them
 
 def take_percent_change_sev_cur(currencies):
     with open('timeseries_rates.txt', 'r') as file:
@@ -34,20 +33,18 @@ def take_percent_change_sev_cur(currencies):
             per_change = (rates[date][currency] / start_rate - 1) * -100
             temporary_data.append((date, currency, rates[date][currency], per_change))
 
-    # Create pandas database from tempora
-    df = pd.DataFrame(temporary_data, columns=['Date', 'Currency', 'Rate', 'Percent change'])
-    fig = px.line(df, x='Date', y='Percent change', color='Currency')
 
-    # Fill temporary data tuples with date, name currency, rate and percent change
-    for currency in currencies:
-        start_rate = rates[start_date][currency]
-        for date in rates:
-            per_change = (rates[date][currency] / start_rate - 1) * -100
-            temporary_data.append((date, currency, rates[date][currency], per_change))
 
-    # Create pandas database from tempora
+
+    # Create pandas database from temporary data
     df = pd.DataFrame(temporary_data, columns=['Date', 'Currency', 'Rate', 'Percent change'])
     fig = px.line(df, x='Date', y='Percent change', color='Currency')
 
     with open("percent_changes.png", "wb") as p:
         p.write(scope.transform(fig, format="png"))
+
+
+from timeseries_rates import set_timeseries
+
+set_timeseries('2020-01-01', '2020-03-01')
+take_percent_change_sev_cur(["UAH", "RUB"])
