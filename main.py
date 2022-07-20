@@ -1,14 +1,18 @@
+import json
 import secrets
 from fastapi.responses import FileResponse
 from enum import Enum
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
+from  sqlalchemy import text
 
 from returngraph import take_percent_change_sev_cur
-from timeseries_rates import set_timeseries, translate_date
+from timeseries_rates import translate_date
 from user_database import crud, schemas, models
 from user_database.database import SessionLocal, engine
+
+import hashlib
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -91,12 +95,12 @@ def get_db():
 
 
 
-@app.post("/users/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
+@app.post("/users/{email}/{password}", response_model=schemas.User)
+def create_user(email, password, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_email(db, email=email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
+    return crud.create_user(db=db, email=email, password=password)
 
 
 
@@ -106,22 +110,27 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security), 
     user_name = credentials.username
     password = credentials.password
     user = crud.get_user_by_email(db, user_name)
+
     if user:
         correct_user_name = user_name
-        if user.hashed_password.strip("notreallyhashed")  == password:
+        if user.hashed_password == password:
             correct_password = password
+        else:
+            correct_password = "None"
     else:
         correct_user_name = "None"
         correct_password = "None"
-    correct_username = secrets.compare_digest(credentials.username, correct_user_name)
-    correct_password = secrets.compare_digest(credentials.password, correct_password)
+    print(correct_user_name)
+    correct_username = secrets.compare_digest(user_name, correct_user_name)
+    correct_password = secrets.compare_digest(password, correct_password)
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Basic"},
         )
-    return credentials.username
+
+    return correct_user_name
 
 
 
@@ -133,18 +142,24 @@ def read_current_user(username: str = Depends(get_current_username)):
 @app.get("/timeseries/{start_date}/{end_date}")
 async def time(start_date_year: Year, start_date_month: Month, start_date_day: Day,
                end_date_year: Year, end_date_month: Month, end_date_day: Day,
-               username=Depends(get_current_username)):
+               username=Depends(get_current_username), db: Session = Depends(get_db)):
     start_date, end_date = translate_date(start_date_day, start_date_month, start_date_year,
                                           end_date_day, end_date_month, end_date_year)
-    set_timeseries(start_date, end_date)
+    crud.create_user_timeseries(db=db, user_id=1, timeseries=start_date + 'to' + end_date)
     return 'Timeseries are setting'
+
 
 
 @app.get("/sev_currencies/{first_cur}")
 async def main(first_cur: CurrencyName, second_cur: CurrencyName = None,
                third_cur: CurrencyName = None, four_cur: CurrencyName = None,
-               username=Depends(get_current_username)):
+               username=Depends(get_current_username), db: Session = Depends(get_db)):
     used_currencies = [currency for currency in [first_cur, second_cur, third_cur, four_cur] if currency is not None]
+    user_id = 1
+    crud.get_last_timeseries(db, user_id)
 
-    take_percent_change_sev_cur(used_currencies)
+    date = crud.get_last_timeseries(db, user_id)
+    start_date, end_date = date[0].split('to')
+    take_percent_change_sev_cur(used_currencies, start_date, end_date)
     return FileResponse("percent_changes.png")
+
