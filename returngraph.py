@@ -1,3 +1,5 @@
+import requests
+
 import plotly.express as px
 import pandas as pd
 from kaleido.scopes.plotly import PlotlyScope
@@ -20,9 +22,18 @@ scope = PlotlyScope(
 
 
 
-def take_percent_change_sev_cur(currencies):
-    with open('timeseries_rates.txt', 'r') as file:
-        rates = json.load(file)['rates']
+def take_percent_change_sev_cur(currencies, start_date, end_date):
+    url = f"https://api.apilayer.com/exchangerates_data/timeseries?start_date={start_date}&end_date={end_date}&base=USD"
+
+    payload = {}
+    headers = {
+        "apikey": "nqVSc2eE3eoDiOYk3szQYL1ZQ5kPDBXH"
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    result = response.text
+    rates = json.loads(result)['rates']
     temporary_data = []
     start_date = list(rates.keys())[0]
 
@@ -36,6 +47,7 @@ def take_percent_change_sev_cur(currencies):
 
 
 
+
     # Create pandas database from temporary data
     df = pd.DataFrame(temporary_data, columns=['Date', 'Currency', 'Rate', 'Percent change'])
     fig = px.line(df, x='Date', y='Percent change', color='Currency')
@@ -44,7 +56,4 @@ def take_percent_change_sev_cur(currencies):
         p.write(scope.transform(fig, format="png"))
 
 
-from timeseries_rates import set_timeseries
 
-set_timeseries('2020-01-01', '2020-03-01')
-take_percent_change_sev_cur(["UAH", "RUB"])
