@@ -128,9 +128,6 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security), 
         )
     return user_name
 
-@app.get('/')
-def get_text_id_test(username=Depends(get_current_username), db: Session = Depends(get_db)):
-    return crud.get_current_user_id(db, username)
 
 @app.get("/users/me")
 def read_current_user(username: str = Depends(get_current_username)):
