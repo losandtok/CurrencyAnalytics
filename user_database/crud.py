@@ -1,7 +1,10 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
+import hashlib
 
-from . import models, schemas
+import os
 
+from . import models
 
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
@@ -15,23 +18,25 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 
-def create_user(db: Session, user: schemas.UserCreate):
-    fake_hashed_password = user.password + "notreallyhashed"
-    db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
+def create_user(db: Session, email, password):
+
+    hashed_password = password
+    db_user = models.User(email=email, hashed_password=hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
-
 def get_items(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Item).offset(skip).limit(limit).all()
+    return db.query(models.Timeseries).offset(skip).limit(limit).all()
 
 
-def create_user_item(db: Session, item: schemas.ItemCreate, user_id: int):
-    db_item = models.Item(**item.dict(), owner_id=user_id)
-    db.add(db_item)
+def get_last_timeseries(db: Session, user_id):
+    return db.query(models.Timeseries.start_to_end_time).filter(models.Timeseries.owner_id == user_id).order_by(desc(models.Timeseries.query_date)).first()
+
+def create_user_timeseries(db: Session, timeseries, user_id: int):
+    db_timeseries = models.Timeseries(start_to_end_time=timeseries, owner_id=user_id)
+    db.add(db_timeseries)
     db.commit()
-    db.refresh(db_item)
-    return db_item
-
+    db.refresh(db_timeseries)
+    return db_timeseries
