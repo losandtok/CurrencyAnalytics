@@ -9,7 +9,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    hashed_password = Column(String, unique=True)
+    salt = Column(String, unique=True)
     is_active = Column(Boolean, default=True)
 
     items = relationship("Timeseries", back_populates="owner")

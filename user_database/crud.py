@@ -19,9 +19,9 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_user(db: Session, email, password):
-
-    hashed_password = password
-    db_user = models.User(email=email, hashed_password=hashed_password)
+    salt = os.urandom(32)
+    hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
+    db_user = models.User(email=email, hashed_password=hashed_password, salt=salt)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -30,6 +30,10 @@ def create_user(db: Session, email, password):
 def get_items(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Timeseries).offset(skip).limit(limit).all()
 
+
+def get_current_user_id(db: Session, username):
+    user_id = db.query(models.User.id).filter(models.User.email == username).first()
+    return user_id[0]
 
 def get_last_timeseries(db: Session, user_id):
     return db.query(models.Timeseries.start_to_end_time).filter(models.Timeseries.owner_id == user_id).order_by(desc(models.Timeseries.query_date)).first()
