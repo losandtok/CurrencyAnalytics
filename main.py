@@ -1,18 +1,16 @@
-import json
+import hashlib
 import secrets
 from fastapi.responses import FileResponse
 from enum import Enum
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
-from  sqlalchemy import text
+
 
 from returngraph import take_percent_change_sev_cur
 from timeseries_rates import translate_date
 from user_database import crud, schemas, models
 from user_database.database import SessionLocal, engine
-
-import hashlib
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -113,14 +111,13 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security), 
 
     if user:
         correct_user_name = user_name
-        if user.hashed_password == password:
+        if user.hashed_password == hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), user.salt, 10000):
             correct_password = password
         else:
             correct_password = "None"
     else:
         correct_user_name = "None"
         correct_password = "None"
-    print(correct_user_name)
     correct_username = secrets.compare_digest(user_name, correct_user_name)
     correct_password = secrets.compare_digest(password, correct_password)
     if not (correct_username and correct_password):
@@ -129,10 +126,11 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security), 
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Basic"},
         )
+    return user_name
 
-    return correct_user_name
-
-
+@app.get('/')
+def get_text_id_test(username=Depends(get_current_username), db: Session = Depends(get_db)):
+    return crud.get_current_user_id(db, username)
 
 @app.get("/users/me")
 def read_current_user(username: str = Depends(get_current_username)):
@@ -145,7 +143,8 @@ async def time(start_date_year: Year, start_date_month: Month, start_date_day: D
                username=Depends(get_current_username), db: Session = Depends(get_db)):
     start_date, end_date = translate_date(start_date_day, start_date_month, start_date_year,
                                           end_date_day, end_date_month, end_date_year)
-    crud.create_user_timeseries(db=db, user_id=1, timeseries=start_date + 'to' + end_date)
+    user_id = crud.get_current_user_id(db, username)
+    crud.create_user_timeseries(db=db, user_id=user_id, timeseries=start_date + 'to' + end_date)
     return 'Timeseries are setting'
 
 
@@ -155,7 +154,7 @@ async def main(first_cur: CurrencyName, second_cur: CurrencyName = None,
                third_cur: CurrencyName = None, four_cur: CurrencyName = None,
                username=Depends(get_current_username), db: Session = Depends(get_db)):
     used_currencies = [currency for currency in [first_cur, second_cur, third_cur, four_cur] if currency is not None]
-    user_id = 1
+    user_id = crud.get_current_user_id(db, username)
     crud.get_last_timeseries(db, user_id)
 
     date = crud.get_last_timeseries(db, user_id)
