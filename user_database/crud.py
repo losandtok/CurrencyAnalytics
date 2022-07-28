@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 import hashlib
+from loguru import logger
 
 import os
 
@@ -21,11 +22,17 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 def create_user(db: Session, email, password):
     salt = os.urandom(32)
     hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
-    db_user = models.User(email=email, hashed_password=hashed_password, salt=salt)
+    hex_salt = salt.hex()
+    hex_hashed_password = hashed_password.hex()
+    logger.info(f"hex_hashed_password:{hex_hashed_password}\n"
+                f"hashed_password:{hashed_password}\n"
+                f"hex_salt:{hex_salt}")
+    db_user = models.User(email=email, hashed_password=hex_hashed_password, salt=hex_salt)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
 
 def get_items(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Timeseries).offset(skip).limit(limit).all()

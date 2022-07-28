@@ -123,35 +123,60 @@ password:b'444'
 hashed_password:b"\xa1G\xabjM\x16J\x01-\xab\xae\xd4\xf3\x95\xffM\xab\xa6e\xabi'\xe7\xfa=\x94o|\xd5\xa7\x02\xc8"
 user.hashed_password:\xc3a64853673e4d6834e1c96b7398598ae91d2f5d815dfb54c3f767245d1bb1d7
 correct_password:False
-    """
+
+
+correct_username:True
+correct_password:False
+correct_user_name:r4
+password:b'444'
+hashed_password:b"\xa1G\xabjM\x16J\x01-\xab\xae\xd4\xf3\x95\xffM\xab\xa6e\xabi'\xe7\xfa=\x94o|\xd5\xa7\x02\xc8"
+user.hashed_password:\xc3a64853673e4d6834e1c96b7398598ae91d2f5d815dfb54c3f767245d1bb1d7
+
+
+After change in crud (add repr())
+{
+  "email": "r5",
+  "p": "555"
+  "id": 4,
+  "is_active": true,
+  "items": []
+}    """
 
     user_name = credentials.username
     password = credentials.password
     user = crud.get_user_by_email(db, user_name)
 
     hashed_password = 'not initialized'
+    user_hashed_password_bytes = 'not initialized'
 
     if user:
         correct_user_name = user_name
-        salt = user.salt.encode('utf-8')
+        logger.info(f"user.salt:{user.salt}\ntype(user.salt):{type(user.salt)}")
+        salt = bytes.fromhex(user.salt)
         password = password.encode('utf-8')
         # logger.info(f"password, type(password): {password}, {type(password)}")
-        hashed_password = hashlib.pbkdf2_hmac('sha256', password, bytes(salt), 10000)
-        if user.hashed_password == hashed_password:
+        # user_hashed_password_bytes = user.hashed_password.encode('utf-8')
+        user_hashed_password_bytes = bytes.fromhex(user.hashed_password)
+        hashed_password = hashlib.pbkdf2_hmac('sha256', password, salt, 10000)
+
+        if user_hashed_password_bytes == hashed_password:
             correct_password = password
         else:
-            correct_password = "None"
+            correct_password = b"None"
     else:
         correct_user_name = "None"
-        correct_password = "None"
-    correct_username = secrets.compare_digest(user_name, correct_user_name)
-    correct_password = secrets.compare_digest(password, bytes(correct_password.encode('utf-8')))
-    logger.info(f"correct_username:{correct_username}\n"
-                f"correct_password:{correct_password}"
+        correct_password = b"None"
+    is_correct_username = secrets.compare_digest(user_name, correct_user_name)
+    logger.info(f"is_correct_username:{is_correct_username}\n"
+                f"correct_password:{correct_password}\n"
                 f"correct_user_name:{correct_user_name}\n"
                 f"password:{password}\nhashed_password:{hashed_password}\n"
-                f"user.hashed_password:{user.hashed_password}\n")
-    if not (correct_username and correct_password):
+                f"user.hashed_password:{user.hashed_password}\n"
+                f"user_hashed_password_bytes:{user_hashed_password_bytes}")
+    is_correct_password = secrets.compare_digest(password, correct_password)
+
+    logger.info(f"is_correct_password:{is_correct_password}")
+    if not (is_correct_username and is_correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
