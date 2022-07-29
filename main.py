@@ -1,4 +1,5 @@
 import hashlib
+from loguru import logger
 import secrets
 from fastapi.responses import FileResponse
 from enum import Enum
@@ -109,17 +110,22 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security), 
     password = credentials.password
     user = crud.get_user_by_email(db, user_name)
 
+    hashed_password = 'not initialized'
+
     if user:
-        correct_user_name = user_name
-        if user.hashed_password == hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), user.salt, 10000):
+        correct_username = user_name
+        salt = user.salt
+        hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
+
+        if user.hashed_password == hashed_password:
             correct_password = password
+
         else:
-            correct_password = "None"
+            correct_password = None
     else:
-        correct_user_name = "None"
-        correct_password = "None"
-    correct_username = secrets.compare_digest(user_name, correct_user_name)
-    correct_password = secrets.compare_digest(password, correct_password)
+        correct_username = None
+        correct_password = None
+
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
