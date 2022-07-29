@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -9,8 +9,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
-    hashed_password = Column(String, unique=True)
-    salt = Column(String, unique=True)
+    hashed_password = Column(LargeBinary, unique=True)
+    salt = Column(LargeBinary, unique=True)
     is_active = Column(Boolean, default=True)
 
     items = relationship("Timeseries", back_populates="owner")

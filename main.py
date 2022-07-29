@@ -105,25 +105,6 @@ def create_user(email, password, db: Session = Depends(get_db)):
 
 
 def get_current_username(credentials: HTTPBasicCredentials = Depends(security), db: Session = Depends(get_db)):
-    """test /users/me
-user.hashed_password != hashed_password:
-
-Output:
-(for {
-  "email": "r4",
-  "p": "444"
-  "id": 3,
-  "is_active": true,
-  "items": []
-})
-
-correct_username:True
-correct_user_name:r4
-password:b'444'
-hashed_password:b"\xa1G\xabjM\x16J\x01-\xab\xae\xd4\xf3\x95\xffM\xab\xa6e\xabi'\xe7\xfa=\x94o|\xd5\xa7\x02\xc8"
-user.hashed_password:\xc3a64853673e4d6834e1c96b7398598ae91d2f5d815dfb54c3f767245d1bb1d7
-correct_password:False
-    """
 
     user_name = credentials.username
     password = credentials.password
@@ -132,25 +113,19 @@ correct_password:False
     hashed_password = 'not initialized'
 
     if user:
-        correct_user_name = user_name
-        salt = user.salt.encode('utf-8')
-        password = password.encode('utf-8')
-        # logger.info(f"password, type(password): {password}, {type(password)}")
-        hashed_password = hashlib.pbkdf2_hmac('sha256', password, bytes(salt), 10000)
+        correct_username = user_name
+        salt = user.salt
+        hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
+
         if user.hashed_password == hashed_password:
             correct_password = password
+
         else:
-            correct_password = "None"
+            correct_password = None
     else:
-        correct_user_name = "None"
-        correct_password = "None"
-    correct_username = secrets.compare_digest(user_name, correct_user_name)
-    correct_password = secrets.compare_digest(password, bytes(correct_password.encode('utf-8')))
-    logger.info(f"correct_username:{correct_username}\n"
-                f"correct_password:{correct_password}"
-                f"correct_user_name:{correct_user_name}\n"
-                f"password:{password}\nhashed_password:{hashed_password}\n"
-                f"user.hashed_password:{user.hashed_password}\n")
+        correct_username = None
+        correct_password = None
+
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
