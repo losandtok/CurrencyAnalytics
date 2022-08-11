@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 
 
-SQLALCHEMY_DATABASE_URL  = 'postgresql+psycopg2://gxzwnrrlprhgrm:d988195cb445d139128ad103b1722ab0bae6e082cc2fc2986f546523495b771c@ec2-54-76-43-89.eu-west-1.compute.amazonaws.com:5432/dfa8h8agc5p6gi'
+SQLALCHEMY_DATABASE_URL  = 'postgresql+psycopg2://yafcbxezfzlemw:872753ef79dce9b5268371000800cc6a12605c23349dd6c3153d088310f65df1@ec2-34-252-216-149.eu-west-1.compute.amazonaws.com:5432/d7ngenunpf9h3k'
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL
 )
