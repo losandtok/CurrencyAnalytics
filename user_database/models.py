@@ -26,3 +26,12 @@ class Timeseries(Base):
 
     owner = relationship("User", back_populates="items")
 
+
+class Currencies(Base):
+    __tablename__ = "currencies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    currencies = Column(String, index=True)
+    start_to_end_time = Column(String, index=True)
+    owner_id = Column(Integer, index=True)
+    query_date_to_currency_list = Column(DateTime(timezone=True), server_default=func.now())

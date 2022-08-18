@@ -1,6 +1,4 @@
 import hashlib
-from loguru import logger
-import secrets
 from fastapi.responses import FileResponse
 from enum import Enum
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -66,7 +64,7 @@ class Month(str, Enum):
     May = '05'
     June = '06'
     July = '07'
-    August = '07'
+    August = '08'
     September = '09'
     Ocrober = '10'
     November = '11'
@@ -158,10 +156,14 @@ async def main(first_cur: CurrencyName, second_cur: CurrencyName = None,
                username=Depends(get_current_username), db: Session = Depends(get_db)):
     used_currencies = [currency for currency in [first_cur, second_cur, third_cur, four_cur] if currency is not None]
     user_id = crud.get_current_user_id(db, username)
-    crud.get_last_timeseries(db, user_id)
-
     date = crud.get_last_timeseries(db, user_id)
+    crud.create_currency_list(db=db, currencies_list=' '.join(used_currencies), user_id=user_id, start_to_end_time=date[0])
     start_date, end_date = date[0].split('to')
     take_percent_change_sev_cur(used_currencies, start_date, end_date)
     return FileResponse("percent_changes.png")
 
+
+@app.get("/history")
+async def history(db: Session =Depends(get_db), username=Depends(get_current_username)):
+    user_id = crud.get_current_user_id(db, username)
+    return crud.get_last_five_queries(db=db, user_id=user_id)

@@ -6,6 +6,7 @@ class ItemBase(BaseModel):
     start_date: str
     end_date: str
     currencies: str
+
 class ItemCreate(ItemBase):
     pass
 
